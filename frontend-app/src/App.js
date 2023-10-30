@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useJwt } from 'react-jwt';
 import './App.css';
 
 function App() {
@@ -7,11 +8,29 @@ function App() {
   const [email, setEmail] = useState('');
   const [password, setPasword] = useState('');
 
+  const { decodedToken } = useJwt(token);
+  console.log('decoded token:', decodedToken);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     axios.post('http://localhost:8080/login', { email, password })
       .then((response) => {
         console.log(response)
+        const jwt = response.data.token;
+        setToken(jwt);
+      })
+      .catch((error) => console.log(error))
+  }
+
+
+  const fetchDogs = () => {
+    axios.get('http://localhost:8080/dogs', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      }
+    })
+      .then((response) => {
+        console.log('Dogs response:', response)
       })
       .catch((error) => console.log(error))
   }
@@ -19,9 +38,9 @@ function App() {
   return (
     <div className="App">
       <header className="App-header">
-      <h1>Auth with JWT 🪐</h1>
+        <h1>Auth with JWT 🪐</h1>
 
-      { !token && (
+        { !decodedToken && (
           <form onSubmit={handleSubmit}>
             <label>Email</label>
             <input
@@ -38,6 +57,10 @@ function App() {
           </form>
         ) }
 
+        { decodedToken && (<>
+          <h1>Dogs should appear here 🐶</h1>
+          <button onClick={fetchDogs}>Fetch dogs!</button>
+        </>) }
       </header>
     </div>
   );
